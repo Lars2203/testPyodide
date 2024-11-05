@@ -1,101 +1,51 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interactive Image Processing</title>
+  <title>Interactive Image Filters</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.16/tailwind.min.css">
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
-    canvas { border: 1px solid #000; margin: 10px; }
-  </style>
 </head>
-<body>
-  <h1>Interactive Image Processing</h1>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-4xl mx-auto">
+    <header class="bg-white shadow rounded-lg p-6 mb-8">
+      <h1 class="text-2xl font-bold">Interactive Image Filters</h1>
+    </header>
 
-  <label for="threshold">Threshold:</label>
-  <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.5">
-  <br>
+    <div class="bg-white shadow rounded-lg p-6 mb-8">
+      <h2 class="text-xl font-bold mb-4">Filtering Options</h2>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label for="threshold" class="block mb-2 font-medium">Threshold</label>
+          <input type="range" id="threshold" min="0" max="255" value="128" class="w-full" oninput="updateImage()">
+        </div>
+        <div>
+          <label for="kernel-size" class="block mb-2 font-medium">Kernel Size</label>
+          <input type="range" id="kernel-size" min="1" max="15" value="3" class="w-full" oninput="updateImage()">
+        </div>
+      </div>
+    </div>
 
-  <label for="kernelSize">Kernel Size:</label>
-  <input type="range" id="kernelSize" min="1" max="20" step="1" value="3">
-  <br><br>
+    <div class="bg-white shadow rounded-lg p-6">
+      <h2 class="text-xl font-bold mb-4">Filtered Image</h2>
+      <div id="image-container" class="flex justify-center">
+        <img id="filtered-image" src="/api/placeholder/600/400" alt="Filtered Image" class="max-w-full h-auto">
+      </div>
+    </div>
+  </div>
 
-  <button id="thresholdButton">Apply Threshold</button>
-  <button id="morphButton">Apply Morphological Operation</button>
-  <br><br>
+  <script type="module">
+    import init, { apply_filters } from './image_filters.js';
 
-  <canvas id="canvas" width="512" height="512"></canvas>
-
-  <script>
-    async function main() {
-      let pyodide = await loadPyodide();
-      await pyodide.loadPackage(['scikit-image', 'numpy']);
-      
-      const pythonCode = `
-      from skimage import filters, morphology
-      from skimage.color import rgb2gray
-      import numpy as np
-
-      image = None
-
-      def load_image(data, width, height):
-          global image
-          image = np.array(data, dtype=np.uint8).reshape((height, width, 4))[:, :, :3]
-
-      def threshold(threshold_value):
-          gray_img = rgb2gray(image)
-          binary_img = gray_img > threshold_value
-          return (binary_img * 255).astype(np.uint8)
-
-      def morphological_operation(operation, size):
-          gray_img = rgb2gray(image)
-          if operation == "dilation":
-              result = morphology.dilation(gray_img, morphology.square(size))
-          elif operation == "erosion":
-              result = morphology.erosion(gray_img, morphology.square(size))
-          return (result * 255).astype(np.uint8)
-      `;
-      pyodide.runPython(pythonCode);
-
-      const img = new Image();
-      img.src = "./gray.png";
-      img.crossOrigin = "Anonymous";  // Ensure CORS compliance if needed
-
-      img.onload = async () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0, img.width, img.height);
-
-        const imageData = ctx.getImageData(0, 0, img.width, img.height);
-        const imageArray = Array.from(imageData.data);
-        pyodide.globals.get("load_image")(imageArray, img.width, img.height);
-      };
-
-      document.getElementById('thresholdButton').addEventListener('click', async () => {
-        const thresholdValue = parseFloat(document.getElementById('threshold').value);
-        const thresholded = pyodide.runPython(`threshold(${thresholdValue})`);
-        updateCanvas(thresholded, img.width, img.height);
-      });
-
-      document.getElementById('morphButton').addEventListener('click', async () => {
-        const kernelSize = parseInt(document.getElementById('kernelSize').value, 10);
-        const morphed = pyodide.runPython(`morphological_operation("dilation", ${kernelSize})`);
-        updateCanvas(morphed, img.width, img.height);
-      });
-
-      function updateCanvas(imageData, width, height) {
-        const canvas = document.getElementById('canvas');
-        const ctx = canvas.getContext('2d');
-        const imgData = new Uint8ClampedArray(imageData.toJs().data);
-        const imageDataObject = new ImageData(imgData, width, height);
-        ctx.putImageData(imageDataObject, 0, 0);
-      }
+    async function updateImage() {
+      await init();
+      const threshold = document.getElementById('threshold').value;
+      const kernelSize = document.getElementById('kernel-size').value;
+      const filteredImageData = await apply_filters('gray.png', threshold, kernelSize);
+      const img = document.getElementById('filtered-image');
+      img.src = filteredImageData;
     }
 
-    main();
+    updateImage();
   </script>
 </body>
 </html>
