@@ -21,22 +21,17 @@
       <input type="range" id="kernel-size" min="1" max="15" value="3" class="w-full" oninput="updateImage()">
     </div>
     <script type="module">
+      let pyodide = await loadPyodide();
+      await pyodide.loadPackage(['scikit-image', 'numpy']);
+
       async function updateImage() {
-        await loadPyodide();
         const threshold = document.getElementById('threshold').value;
         const kernelSize = document.getElementById('kernel-size').value;
         const image = await loadImage();
         const processedImage = await processImage(image, threshold, kernelSize);
         displayImage(processedImage);
       }
-
-      async function loadPyodide() {
-        if (!pyodide) {
-          let pyodide = await loadPyodide();
-          await pyodide.loadPackage(['scikit-image', 'numpy']);
-        }
-      }
-
+      
       async function loadImage() {
         const response = await fetch('gray.png');
         const imageData = await response.arrayBuffer();
@@ -66,9 +61,6 @@
         img.src = image.toDataURL();
       }
 
-      loadPyodide().then(() => {
-        updateImage();
-      });
     </script>
   </div>
 </body>
