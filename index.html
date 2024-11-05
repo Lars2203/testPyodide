@@ -20,7 +20,7 @@
       <label for="kernel-size" class="block font-medium mb-2">Kernel Size</label>
       <input type="range" id="kernel-size" min="1" max="15" value="3" class="w-full" oninput="updateImage()">
     </div>
-    <script>
+    <script type="module">
       let pyodide = await loadPyodide();
       await pyodide.loadPackage(['scikit-image', 'numpy']);
 
