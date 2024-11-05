@@ -32,19 +32,17 @@
       let pyodide = await loadPyodide();
       await pyodide.loadPackage(['scikit-image', 'numpy']);
       
-      // Load and run the Python code
       const pythonCode = `
-      from skimage import filters, morphology, io
+      from skimage import filters, morphology
       from skimage.color import rgb2gray
       import numpy as np
 
-      # Placeholder for image, will be set in JavaScript
       image = None
 
-      def load_image(data):
+      def load_image(data, width, height):
           global image
-          image = io.imread(data)
-      
+          image = np.array(data, dtype=np.uint8).reshape((height, width, 4))[:, :, :3]
+
       def threshold(threshold_value):
           gray_img = rgb2gray(image)
           binary_img = gray_img > threshold_value
@@ -60,10 +58,11 @@
       `;
       pyodide.runPython(pythonCode);
 
-      // Load image data into Pyodide
       const img = new Image();
-      img.src = "./gray.png";  // Use a local path to avoid cross-origin issues
-      img.onload = () => {
+      img.src = "./gray.png";
+      img.crossOrigin = "Anonymous";  // Ensure CORS compliance if needed
+
+      img.onload = async () => {
         const canvas = document.createElement("canvas");
         const ctx = canvas.getContext("2d");
         canvas.width = img.width;
@@ -72,26 +71,26 @@
 
         const imageData = ctx.getImageData(0, 0, img.width, img.height);
         const imageArray = Array.from(imageData.data);
-        pyodide.globals.get("load_image")(imageArray);
+        pyodide.globals.get("load_image")(imageArray, img.width, img.height);
       };
 
       document.getElementById('thresholdButton').addEventListener('click', async () => {
         const thresholdValue = parseFloat(document.getElementById('threshold').value);
         const thresholded = pyodide.runPython(`threshold(${thresholdValue})`);
-        updateCanvas(thresholded);
+        updateCanvas(thresholded, img.width, img.height);
       });
 
       document.getElementById('morphButton').addEventListener('click', async () => {
         const kernelSize = parseInt(document.getElementById('kernelSize').value, 10);
         const morphed = pyodide.runPython(`morphological_operation("dilation", ${kernelSize})`);
-        updateCanvas(morphed);
+        updateCanvas(morphed, img.width, img.height);
       });
 
-      function updateCanvas(imageData) {
+      function updateCanvas(imageData, width, height) {
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         const imgData = new Uint8ClampedArray(imageData.toJs().data);
-        const imageDataObject = new ImageData(imgData, canvas.width, canvas.height);
+        const imageDataObject = new ImageData(imgData, width, height);
         ctx.putImageData(imageDataObject, 0, 0);
       }
     }
