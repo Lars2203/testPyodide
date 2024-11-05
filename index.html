@@ -32,11 +32,20 @@
             window.pyodide = await loadPyodide();
             await pyodide.loadPackage(['numpy', 'scikit-image', 'matplotlib']);
         }
-        
+
+        // Function to load image and apply transformations
         async function applyTransformations() {
             const thresholdValue = parseFloat(document.getElementById("threshold-slider").value);
             const kernelSize = parseInt(document.getElementById("kernel-slider").value);
             const operation = document.getElementById("operation-switch").value;
+
+            // Fetch image data using JavaScript
+            const imgData = await fetch('gray.png')
+                .then(response => response.arrayBuffer())
+                .then(buffer => new Uint8Array(buffer));
+
+            // Pass the image data to Pyodide
+            pyodide.globals.set("image_data", imgData);
 
             // Define Python code with Pyodide
             const code = `
@@ -45,9 +54,11 @@ from skimage.color import rgb2gray
 from skimage import morphology
 import numpy as np
 
-# Load the image
-img = imread('lars2203.github.io/testPyodide/gray.png')
-gray_img = rgb2gray(img)
+# Load image from JavaScript (using ArrayBuffer)
+img_data = np.frombuffer(image_data, dtype=np.uint8)
+
+# Process image (assuming it is grayscale, adjust if needed)
+gray_img = rgb2gray(img_data)
 
 def threshold(threshold_value):
     binary_img = gray_img > threshold_value
@@ -73,18 +84,20 @@ morphed_img = morphological_operation('${operation}', ${kernelSize})
             drawOnCanvas(morphedImg);
         }
 
+        // Function to draw the result image on canvas
         function drawOnCanvas(imageArray) {
             const canvas = document.getElementById("output-canvas");
             const ctx = canvas.getContext("2d");
             canvas.width = imageArray.shape[1];
             canvas.height = imageArray.shape[0];
-            
+
             // Flatten and normalize array for rendering
             const imageData = new Uint8ClampedArray(imageArray.flat().map(v => v * 255));
             const imgData = new ImageData(imageData, canvas.width, canvas.height);
             ctx.putImageData(imgData, 0, 0);
         }
 
+        // Load Pyodide and required packages on page load
         loadPyodideAndPackages();
     </script>
 </body>
