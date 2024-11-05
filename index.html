@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Image Processing</title>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+    canvas { border: 1px solid #000; margin: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Interactive Image Processing</h1>
+
+  <label for="threshold">Threshold:</label>
+  <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.5">
+  <br>
+
+  <label for="kernelSize">Kernel Size:</label>
+  <input type="range" id="kernelSize" min="1" max="20" step="1" value="3">
+  <br><br>
+
+  <button id="thresholdButton">Apply Threshold</button>
+  <button id="morphButton">Apply Morphological Operation</button>
+  <br><br>
+
+  <canvas id="canvas" width="512" height="512"></canvas>
+
+  <script>
+    async function main() {
+      let pyodide = await loadPyodide();
+      await pyodide.loadPackage(['scikit-image', 'numpy']);
+      
+      // Load and run the Python code
+      const pythonCode = `
+      from skimage import filters, morphology, io
+      from skimage.color import rgb2gray
+      import numpy as np
+
+      # Placeholder for image, will be set in JavaScript
+      image = None
+
+      def load_image(data):
+          global image
+          image = io.imread(data)
+      
+      def threshold(threshold_value):
+          gray_img = rgb2gray(image)
+          binary_img = gray_img > threshold_value
+          return (binary_img * 255).astype(np.uint8)
+
+      def morphological_operation(operation, size):
+          gray_img = rgb2gray(image)
+          if operation == "dilation":
+              result = morphology.dilation(gray_img, morphology.square(size))
+          elif operation == "erosion":
+              result = morphology.erosion(gray_img, morphology.square(size))
+          return (result * 255).astype(np.uint8)
+      `;
+      pyodide.runPython(pythonCode);
+
+      // Load image data into Pyodide
+      const img = new Image();
+      img.src = "./gray.png";  // Use a local path to avoid cross-origin issues
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0, img.width, img.height);
+
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        const imageArray = Array.from(imageData.data);
+        pyodide.globals.get("load_image")(imageArray);
+      };
+
+      document.getElementById('thresholdButton').addEventListener('click', async () => {
+        const thresholdValue = parseFloat(document.getElementById('threshold').value);
+        const thresholded = pyodide.runPython(`threshold(${thresholdValue})`);
+        updateCanvas(thresholded);
+      });
+
+      document.getElementById('morphButton').addEventListener('click', async () => {
+        const kernelSize = parseInt(document.getElementById('kernelSize').value, 10);
+        const morphed = pyodide.runPython(`morphological_operation("dilation", ${kernelSize})`);
+        updateCanvas(morphed);
+      });
+
+      function updateCanvas(imageData) {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const imgData = new Uint8ClampedArray(imageData.toJs().data);
+        const imageDataObject = new ImageData(imgData, canvas.width, canvas.height);
+        ctx.putImageData(imageDataObject, 0, 0);
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
