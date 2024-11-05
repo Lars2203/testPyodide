@@ -20,9 +20,15 @@
       <label for="kernel-size" class="block font-medium mb-2">Kernel Size</label>
       <input type="range" id="kernel-size" min="1" max="15" value="3" class="w-full" oninput="updateImage()">
     </div>
+    
     <script type="module">
-      let pyodide = await loadPyodide();
-      await pyodide.loadPackage(['scikit-image', 'numpy']);
+      let pyodide;
+
+      async function initializePyodide() {
+        pyodide = await loadPyodide();
+        await pyodide.loadPackage(['scikit-image', 'numpy']);
+        updateImage(); // Call initially to set up the default image.
+      }
 
       async function updateImage() {
         const threshold = document.getElementById('threshold').value;
@@ -31,15 +37,15 @@
         const processedImage = await processImage(image, threshold, kernelSize);
         displayImage(processedImage);
       }
-      
+
       async function loadImage() {
         const response = await fetch('gray.png');
         const imageData = await response.arrayBuffer();
-        return window.pyodide.openImage(imageData);
+        return pyodide.openImage(imageData);
       }
 
       async function processImage(image, threshold, kernelSize) {
-        await window.pyodide.runPythonAsync(`
+        await pyodide.runPythonAsync(`
           import numpy as np
           from skimage.filters import threshold_otsu
           from skimage.morphology import closing, square
@@ -61,6 +67,8 @@
         img.src = image.toDataURL();
       }
 
+      // Initialize Pyodide and functions after page load.
+      window.addEventListener("load", initializePyodide);
     </script>
   </div>
 </body>
