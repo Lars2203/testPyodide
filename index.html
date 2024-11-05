@@ -10,7 +10,7 @@
   <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-8">
     <h1 class="text-3xl font-bold mb-4">Interactive Image Processing</h1>
     <div class="flex justify-center mb-4">
-      <img id="processed-image" src="/api/placeholder/600/400" alt="Processed Image" class="max-w-full h-auto rounded-lg">
+      <img id="processed-image" src="gray.png" alt="Processed Image" class="max-w-full h-auto rounded-lg">
     </div>
     <div class="mb-4">
       <label for="threshold" class="block font-medium mb-2">Threshold</label>
@@ -36,7 +36,7 @@
       }
 
       async function loadImage() {
-        const response = await fetch('/api/image/gray.png');
+        const response = await fetch('gray.png');
         const imageData = await response.arrayBuffer();
         return window.pyodide.openImage(imageData);
       }
