@@ -31,8 +31,10 @@
       }
 
       async function loadPyodide() {
-        let pyodide = await loadPyodide();
-        await pyodide.loadPackage(['scikit-image', 'numpy']);
+        if (!pyodide) {
+          let pyodide = await loadPyodide();
+          await pyodide.loadPackage(['scikit-image', 'numpy']);
+        }
       }
 
       async function loadImage() {
