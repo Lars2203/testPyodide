@@ -1,61 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Interactive Image Filters</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/pyodide@0.26.2/build/platform.js"></script>
-  <script type="module">
-    import { apply_filters } from './image_filters.js';
-
-    async function updateImage() {
-      const threshold = document.getElementById('threshold').value;
-      const kernelSize = document.getElementById('kernel-size').value;
-      const filteredImageData = await apply_filters('gray.png', threshold, kernelSize);
-      const img = document.getElementById('filtered-image');
-      img.src = filteredImageData;
-    }
-
-    window.onload = async () => {
-      await loadPyodide();
-      updateImage();
-    };
-
-    async function loadPyodide() {
-      if (!window.Pyodide) {
-        await window.loadPyodide({
-          indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/'
-        });
-        await window.Pyodide.loadPackage(['numpy', 'scipy']);
-      }
-    }
-  </script>
+  <title>Interactive Image Processing</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.16/tailwind.min.css">
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/scikit-image@0.19.3/dist/skimage.min.js"></script>
 </head>
 <body class="bg-gray-100 p-8">
-  <div class="max-w-4xl mx-auto">
-    <header class="bg-white shadow rounded-lg p-6 mb-8">
-      <h1 class="text-2xl font-bold">Interactive Image Filters</h1>
-    </header>
-
-    <div class="bg-white shadow rounded-lg p-6 mb-8">
-      <h2 class="text-xl font-bold mb-4">Filtering Options</h2>
-      <div class="grid grid-cols-2 gap-4">
-        <div>
-          <label for="threshold" class="block mb-2 font-medium">Threshold</label>
-          <input type="range" id="threshold" min="0" max="255" value="128" class="w-full" oninput="updateImage()">
-        </div>
-        <div>
-          <label for="kernel-size" class="block mb-2 font-medium">Kernel Size</label>
-          <input type="range" id="kernel-size" min="1" max="15" value="3" class="w-full" oninput="updateImage()">
-        </div>
-      </div>
+  <div class="max-w-2xl mx-auto bg-white shadow-lg rounded-lg p-8">
+    <h1 class="text-3xl font-bold mb-4">Interactive Image Processing</h1>
+    <div class="flex justify-center mb-4">
+      <img id="processed-image" src="/api/placeholder/600/400" alt="Processed Image" class="max-w-full h-auto rounded-lg">
     </div>
-
-    <div class="bg-white shadow rounded-lg p-6">
-      <h2 class="text-xl font-bold mb-4">Filtered Image</h2>
-      <div id="image-container" class="flex justify-center">
-        <img id="filtered-image" src="gray.png" alt="Filtered Image" class="max-w-full h-auto">
-      </div>
+    <div class="mb-4">
+      <label for="threshold" class="block font-medium mb-2">Threshold</label>
+      <input type="range" id="threshold" min="0" max="255" value="128" class="w-full" oninput="updateImage()">
     </div>
+    <div class="mb-4">
+      <label for="kernel-size" class="block font-medium mb-2">Kernel Size</label>
+      <input type="range" id="kernel-size" min="1" max="15" value="3" class="w-full" oninput="updateImage()">
+    </div>
+    <script type="module">
+      async function updateImage() {
+        await loadPyodide();
+        const threshold = document.getElementById('threshold').value;
+        const kernelSize = document.getElementById('kernel-size').value;
+        const image = await loadImage();
+        const processedImage = await processImage(image, threshold, kernelSize);
+        displayImage(processedImage);
+      }
+
+      async function loadPyodide() {
+        if (!window.pyodide) {
+          window.pyodide = await loadPyodideAndPackages(['scikit-image']);
+        }
+      }
+
+      async function loadImage() {
+        const response = await fetch('/api/image/gray.png');
+        const imageData = await response.arrayBuffer();
+        return window.pyodide.openImage(imageData);
+      }
+
+      async function processImage(image, threshold, kernelSize) {
+        await window.pyodide.runPythonAsync(`
+          import numpy as np
+          from skimage.filters import threshold_otsu
+          from skimage.morphology import closing, square
+
+          image = np.array(${image})
+          thresh = ${threshold}
+          kernel = np.ones((${kernelSize}, ${kernelSize}), dtype=np.uint8)
+
+          binary = image > thresh
+          closed = closing(binary, kernel)
+          
+          ${image}.data = closed.astype(np.uint8).tobytes()
+        `);
+        return image;
+      }
+
+      function displayImage(image) {
+        const img = document.getElementById('processed-image');
+        img.src = image.toDataURL();
+      }
+
+      loadPyodide().then(() => {
+        updateImage();
+      });
+    </script>
   </div>
 </body>
 </html>
