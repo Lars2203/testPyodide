@@ -46,7 +46,7 @@ from skimage import morphology
 import numpy as np
 
 # Load the image
-response = await pyfetch(url="gray.png", method="GET")
+response = await pyfetch(url="https://lars2203.github.io/testPyodide/gray.png", method="GET")
 img = iio.imread(BytesIO(await response.bytes()), index=None)
 gray_img = rgb2gray(img)
 
