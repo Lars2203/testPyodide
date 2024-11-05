@@ -2,8 +2,33 @@
 <html>
 <head>
   <title>Interactive Image Filters</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.16/tailwind.min.css">
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.16/dist/tailwind.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/pyodide@0.26.2/build/platform.js"></script>
+  <script type="module">
+    import { apply_filters } from './image_filters.js';
+
+    async function updateImage() {
+      const threshold = document.getElementById('threshold').value;
+      const kernelSize = document.getElementById('kernel-size').value;
+      const filteredImageData = await apply_filters('gray.png', threshold, kernelSize);
+      const img = document.getElementById('filtered-image');
+      img.src = filteredImageData;
+    }
+
+    window.onload = async () => {
+      await loadPyodide();
+      updateImage();
+    };
+
+    async function loadPyodide() {
+      if (!window.Pyodide) {
+        await window.loadPyodide({
+          indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/'
+        });
+        await window.Pyodide.loadPackage(['numpy', 'scipy']);
+      }
+    }
+  </script>
 </head>
 <body class="bg-gray-100 p-8">
   <div class="max-w-4xl mx-auto">
@@ -28,24 +53,9 @@
     <div class="bg-white shadow rounded-lg p-6">
       <h2 class="text-xl font-bold mb-4">Filtered Image</h2>
       <div id="image-container" class="flex justify-center">
-        <img id="filtered-image" src="/gray.png" alt="Filtered Image" class="max-w-full h-auto">
+        <img id="filtered-image" src="/api/placeholder/600/400" alt="Filtered Image" class="max-w-full h-auto">
       </div>
     </div>
   </div>
-
-  <script type="module">
-    import init, { apply_filters } from './image_filters.js';
-
-    async function updateImage() {
-      await init();
-      const threshold = document.getElementById('threshold').value;
-      const kernelSize = document.getElementById('kernel-size').value;
-      const filteredImageData = await apply_filters('gray.png', threshold, kernelSize);
-      const img = document.getElementById('filtered-image');
-      img.src = filteredImageData;
-    }
-
-    updateImage();
-  </script>
 </body>
 </html>

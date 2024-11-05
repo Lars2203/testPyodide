@@ -4,10 +4,12 @@ import * as tfjsWasm from 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend
 await tfjsWasm.setWasmPath('https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@3.18.0/dist/tfjs-backend-wasm.wasm');
 
 export async function apply_filters(imagePath, threshold, kernelSize) {
-  await loadPyodide(); // Load the Pyodide WebAssembly module
+  if (!window.Pyodide) {
+    await loadPyodide();
+  }
 
   // Load the grayscale image
-  const img = await Pyodide.runPythonAsync(`
+  const img = await window.Pyodide.runPythonAsync(`
     import numpy as np
     from PIL import Image
     image = Image.open('${imagePath}')
@@ -16,7 +18,7 @@ export async function apply_filters(imagePath, threshold, kernelSize) {
   `);
 
   // Apply thresholding
-  const thresholdedImg = await Pyodide.runPythonAsync(`
+  const thresholdedImg = await window.Pyodide.runPythonAsync(`
     import numpy as np
     image = np.array(${tf.tensor(img).dataSync()})
     image[image < ${threshold}] = 0
@@ -25,7 +27,7 @@ export async function apply_filters(imagePath, threshold, kernelSize) {
   `);
 
   // Apply morphological operations
-  const morphedImg = await Pyodide.runPythonAsync(`
+  const morphedImg = await window.Pyodide.runPythonAsync(`
     import numpy as np
     from scipy.ndimage.morphology import binary_opening, binary_closing
     image = np.array(${tf.tensor(thresholdedImg).dataSync()})
@@ -36,7 +38,7 @@ export async function apply_filters(imagePath, threshold, kernelSize) {
   `);
 
   // Convert the processed image back to a data URL
-  const processedImageData = await Pyodide.runPythonAsync(`
+  const processedImageData = await window.Pyodide.runPythonAsync(`
     import numpy as np
     from PIL import Image
     import io
@@ -52,15 +54,8 @@ export async function apply_filters(imagePath, threshold, kernelSize) {
 }
 
 async function loadPyodide() {
-  if (!window.Pyodide) {
-    await loadPyodideAndDependencies();
-  }
-}
-
-async function loadPyodideAndDependencies() {
-  const pyodide = await window.loadPyodide({
+  window.Pyodide = await window.loadPyodide({
     indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.26.2/full/'
   });
-  await pyodide.loadPackage(['numpy', 'scipy']);
-  window.Pyodide = pyodide;
+  await window.Pyodide.loadPackage(['numpy', 'scipy']);
 }
