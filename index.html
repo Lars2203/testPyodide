@@ -3,7 +3,6 @@
 <head> 
     <title>Image Processing</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.10.0/tf.min.js"></script>
-    <script src="script.js"></script>
     <style>
         .container {
             max-width: 800px;
@@ -46,8 +45,10 @@
             </div>
         </div>
 
-        <canvas id="inputCanvas"></canvas>
+        <canvas id="inputCanvas" style="display: none;"></canvas>
         <canvas id="outputCanvas"></canvas>
+
+        <script src="script.js"></script>
     </div>
 </body>
 </html>
