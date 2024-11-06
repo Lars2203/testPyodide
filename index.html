@@ -59,7 +59,6 @@
         const thresholdValue = document.getElementById('thresholdValue');
         const kernelSizeValue = document.getElementById('kernelSizeValue');
 
-        // Load and process the image
         async function loadImage() {
             const img = new Image();
             img.src = 'gray.png';
@@ -84,7 +83,6 @@
             applyThreshold();
         }
 
-        // Apply threshold to the image
         function applyThreshold() {
             const threshold = parseInt(thresholdSlider.value) / 100;
             thresholdValue.textContent = threshold.toFixed(2);
@@ -95,56 +93,50 @@
             });
         }
 
-        // Create kernel for morphological operations
         function createKernel(size) {
             return tf.tidy(() => tf.ones([size, size, 1, 1]).toFloat());
         }
 
-        // Apply dilation
         function applyDilation() {
             const kernelSize = parseInt(kernelSizeSlider.value);
             kernelSizeValue.textContent = kernelSize;
             
             tf.tidy(() => {
                 const kernel = createKernel(kernelSize);
-                const input = currentImageTensor.expandDims(0).expandDims(-1);
+                const input = currentImageTensor.expandDims(-1).expandDims(0);
                 const dilated = tf.conv2d(input, kernel, 1, 'same');
-                currentImageTensor = dilated.squeeze();
+                currentImageTensor = dilated.squeeze([0, -1]);
                 displayTensor(currentImageTensor);
             });
         }
 
-        // Apply erosion
         function applyErosion() {
             const kernelSize = parseInt(kernelSizeSlider.value);
             kernelSizeValue.textContent = kernelSize;
             
             tf.tidy(() => {
                 const kernel = createKernel(kernelSize);
-                const input = currentImageTensor.expandDims(0).expandDims(-1);
+                const input = currentImageTensor.expandDims(-1).expandDims(0);
                 const eroded = tf.conv2d(
                     input,
                     kernel.mul(-1).add(1),
                     1,
                     'same'
                 );
-                currentImageTensor = eroded.squeeze();
+                currentImageTensor = eroded.squeeze([0, -1]);
                 displayTensor(currentImageTensor);
             });
         }
 
-        // Reset the image to original
         function resetImage() {
             currentImageTensor.dispose();
             currentImageTensor = originalImageTensor.clone();
             applyThreshold();
         }
 
-        // Display tensor on canvas
         async function displayTensor(tensor) {
-            // Clone and normalize tensor for display
             const displayTensor = tf.tidy(() => {
-                return tensor.clone().clipByValue(0, 1).mul(255);
+                return tensor.clone().clipByValue(0, 1);
             });
             
             try {
@@ -154,16 +146,13 @@
             }
         }
 
-        // Event listeners
         thresholdSlider.addEventListener('input', applyThreshold);
         kernelSizeSlider.addEventListener('input', () => {
             kernelSizeValue.textContent = kernelSizeSlider.value;
         });
 
-        // Initialize
         loadImage().catch(console.error);
 
-        // Cleanup on page unload
         window.addEventListener('unload', () => {
             if (originalImageTensor) originalImageTensor.dispose();
             if (currentImageTensor) currentImageTensor.dispose();
