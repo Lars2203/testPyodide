@@ -1,9 +1,11 @@
-// Set TensorFlow backend to WebAssembly for faster performance
+// Load TensorFlow.js with WASM backend
 tf.setBackend('wasm').then(() => {
-    main();  // Run main only after the WASM backend is ready
+    console.log("WASM backend is ready");
+    main();  // Only call main after the WASM backend is confirmed
+}).catch(error => {
+    console.error("Failed to load WASM backend:", error);
 });
 
-// Load image and set up processing parameters
 async function loadImage() {
     const img = new Image();
     img.src = 'gray.png';
@@ -15,18 +17,18 @@ async function loadImage() {
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
 
-    // Get image data and create a tensor using only one channel
     const imageData = ctx.getImageData(0, 0, img.width, img.height);
-    const data = new Uint8Array(imageData.width * imageData.height);
+    const data = new Uint8Array(img.width * img.height);
 
-    // Extract only the grayscale data (usually the red channel)
+    // Convert RGBA image to grayscale using only one channel
     for (let i = 0; i < data.length; i++) {
-        data[i] = imageData.data[i * 4]; // Use the red channel
+        data[i] = imageData.data[i * 4]; // Use the red channel or a grayscale formula if needed
     }
 
-    // Create a tensor from the grayscale data
+    // Create a tensor with the correct shape
     return tf.tensor(data, [img.height, img.width], 'int32');
 }
+
 
 // Functions for thresholding, dilation, and erosion
 function threshold(tensor, thresholdValue) {
