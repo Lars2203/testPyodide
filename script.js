@@ -41,7 +41,6 @@ function applyThreshold() {
 
     tf.tidy(() => {
         const thresholded = currentImageTensor.greater(threshold).toFloat();
-        currentImageTensor = thresholded;
         displayTensor(thresholded);
     });
 }
@@ -101,8 +100,8 @@ async function displayTensor(tensor) {
 
     try {
         await tf.browser.toPixels(displayTensor, outputCanvas);
-    } catch (e) {
-        console.error(e);
+    } finally {
+        displayTensor.dispose();
     }
 }
 
