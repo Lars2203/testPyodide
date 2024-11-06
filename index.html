@@ -3,80 +3,85 @@
 <head>
     <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
     <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
-    <style>
-        .slider {
-            margin: 20px 0;
-        }
-    </style>
     <py-env>
-        - matplotlib
         - scikit-image
+        - matplotlib
         - imageio
     </py-env>
 </head>
 <body>
     <h1>Image Thresholding and Morphological Operations</h1>
-    
-    <!-- Threshold Slider -->
-    <label for="threshold">Threshold Value:</label>
-    <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.5" class="slider" oninput="applyTransformation()" />
+    <div>
+        <label for="thresholdSlider">Threshold: </label>
+        <input type="range" id="thresholdSlider" min="0" max="255" value="128" />
+        <span id="thresholdValue">128</span>
+    </div>
+    <div>
+        <label for="kernelSlider">Kernel Size: </label>
+        <input type="range" id="kernelSlider" min="1" max="10" value="3" />
+        <span id="kernelSize">3</span>
+    </div>
+    <div>
+        <label for="operation">Operation: </label>
+        <select id="operation">
+            <option value="dilation">Dilation</option>
+            <option value="erosion">Erosion</option>
+        </select>
+    </div>
+    <button onclick="applyTransform()">Apply</button>
 
-    <!-- Kernel Size Slider -->
-    <label for="kernel">Kernel Size:</label>
-    <input type="range" id="kernel" min="1" max="15" step="1" value="3" class="slider" oninput="applyTransformation()" />
-
-    <!-- Morphological Operation Switch -->
-    <label for="operation">Operation:</label>
-    <select id="operation" onchange="applyTransformation()">
-        <option value="dilation">Dilation</option>
-        <option value="erosion">Erosion</option>
-    </select>
-
-    <!-- Image Output -->
-    <div id="image-output"></div>
+    <div id="imageDisplay">
+        <img id="processedImage" />
+    </div>
 
     <py-script>
-        from js import document
-        from skimage import color, morphology
-        import matplotlib.pyplot as plt
-        import numpy as np
-        import imageio
-        import io, base64
+from js import document
+from skimage import io, color, morphology
+import matplotlib.pyplot as plt
+import io as io_bytes, base64
 
-        def applyTransformation():
-            # Read input values
-            threshold_value = float(document.getElementById("threshold").value)
-            kernel_size = int(document.getElementById("kernel").value)
-            operation = document.getElementById("operation").value
+# Load image once
+img = io.imread("https://lars2203.github.io/testPyodide/gray.png")
+gray_img = color.rgb2gray(img)
 
-            # Load image and process
-            img = imageio.imread('gray.png')  # Ensure 'gray.png' is present in the same folder
-            gray_img = color.rgb2gray(img)
+def threshold(threshold_value):
+    return gray_img > (threshold_value / 255)
 
-            # Thresholding
-            binary_img = gray_img > threshold_value
+def morphological_operation(operation, size):
+    if operation == "dilation":
+        return morphology.dilation(gray_img, morphology.square(size))
+    elif operation == "erosion":
+        return morphology.erosion(gray_img, morphology.square(size))
 
-            # Apply morphological operation
-            if operation == "dilation":
-                result_img = morphology.dilation(binary_img, morphology.square(kernel_size))
-            else:
-                result_img = morphology.erosion(binary_img, morphology.square(kernel_size))
+def applyTransform(*args):
+    threshold_value = int(document.getElementById("thresholdSlider").value)
+    kernel_size = int(document.getElementById("kernelSlider").value)
+    operation = document.getElementById("operation").value
 
-            # Display result
-            buf = io.BytesIO()
-            plt.imshow(result_img, cmap='gray')
-            plt.axis('off')
-            plt.savefig(buf, format='png')
-            buf.seek(0)
-            img_str = "data:image/png;base64," + base64.b64encode(buf.read()).decode("utf-8")
-            document.getElementById("output-img").src = img_str
+    # Apply threshold and morphological operation
+    binary_img = threshold(threshold_value)
+    processed_img = morphological_operation(operation, kernel_size)
 
-        # Initial display setup
-        applyTransformation()
-    </py-script>
+    # Display the result using matplotlib
+    fig, ax = plt.subplots()
+    ax.imshow(processed_img, cmap="gray")
+    ax.axis("off")
 
-    <div id="image-container">
-        <img id="output-img" alt="Processed Image"/>
-    </div>
+    # Convert plot to a PNG image and display it
+    buf = io_bytes.BytesIO()
+    plt.savefig(buf, format="png")
+    buf.seek(0)
+    img_str = "data:image/png;base64," + base64.b64encode(buf.read()).decode("utf-8")
+    document.getElementById("processedImage").setAttribute("src", img_str)
+
+# Update display of sliders
+def updateDisplay(*args):
+    document.getElementById("thresholdValue").innerText = document.getElementById("thresholdSlider").value
+    document.getElementById("kernelSize").innerText = document.getElementById("kernelSlider").value
+
+document.getElementById("thresholdSlider").addEventListener("input", updateDisplay)
+document.getElementById("kernelSlider").addEventListener("input", updateDisplay)
+
+</py-script>
 </body>
 </html>
