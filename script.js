@@ -53,7 +53,6 @@ async function applyDilation() {
     kernelSizeValue.textContent = kernelSize;
 
     tf.tidy(() => {
-        applyThreshold();
         // Prepare input tensor shape [batch, height, width, channels]
         const input = currentImageTensor.expandDims(0);
 
@@ -72,7 +71,6 @@ async function applyErosion() {
     kernelSizeValue.textContent = kernelSize;
 
     tf.tidy(() => {
-        applyThreshold();
         // Prepare input tensor shape [batch, height, width, channels]
         const input = currentImageTensor.expandDims(0);
 
@@ -101,8 +99,8 @@ async function displayTensor(tensor) {
 
     try {
         await tf.browser.toPixels(displayTensor, outputCanvas);
-    } finally {
-        displayTensor.dispose();
+    } catch (e) {
+        console.error(e);
     }
 }
 
