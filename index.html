@@ -27,9 +27,9 @@
         
         <div class="controls">
             <div class="slider-container">
-                <label for="threshold">Threshold Value (0-255): </label>
-                <input type="range" id="threshold" min="0" max="255" value="128">
-                <span id="thresholdValue">128</span>
+                <label for="threshold">Threshold Value (0-1): </label>
+                <input type="range" id="threshold" min="0" max="100" value="50">
+                <span id="thresholdValue">0.5</span>
             </div>
             
             <div class="slider-container">
@@ -74,7 +74,8 @@
             ctx.drawImage(img, 0, 0);
             
             const imageData = ctx.getImageData(0, 0, img.width, img.height);
-            originalImageTensor = tf.browser.fromPixels(imageData, 1);
+            // Normalize to [0,1] range
+            originalImageTensor = tf.browser.fromPixels(imageData, 1).toFloat().div(255);
             currentImageTensor = originalImageTensor.clone();
             
             applyThreshold();
@@ -82,18 +83,18 @@
 
         // Apply threshold to the image
         function applyThreshold() {
-            const threshold = parseInt(thresholdSlider.value);
-            thresholdValue.textContent = threshold;
+            const threshold = parseInt(thresholdSlider.value) / 100;
+            thresholdValue.textContent = threshold.toFixed(2);
             
             tf.tidy(() => {
-                const thresholded = currentImageTensor.greater(threshold).toFloat().mul(255);
+                const thresholded = currentImageTensor.greater(threshold).toFloat();
                 displayTensor(thresholded);
             });
         }
 
         // Create kernel for morphological operations
         function createKernel(size) {
-            return tf.ones([size, size]);
+            return tf.ones([size, size]).toFloat();
         }
 
         // Apply dilation
@@ -123,7 +124,7 @@
                 const kernel = createKernel(kernelSize);
                 const eroded = tf.conv2d(
                     currentImageTensor.expandDims(0).expandDims(-1),
-                    kernel.expandDims(-1).expandDims(-1).mul(-1),
+                    kernel.expandDims(-1).expandDims(-1).mul(-1).add(1),
                     [1, 1],
                     'same'
                 );
@@ -140,8 +141,9 @@
 
         // Display tensor on canvas
         function displayTensor(tensor) {
-            const outputCtx = outputCanvas.getContext('2d');
-            tf.browser.toPixels(tensor, outputCanvas);
+            // Scale back to [0,255] for display
+            const displayTensor = tensor.mul(255);
+            tf.browser.toPixels(displayTensor, outputCanvas);
         }
 
         // Event listeners
