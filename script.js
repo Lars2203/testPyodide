@@ -34,9 +34,7 @@ async function loadImage() {
     applyThreshold();
 }
 
-function applyThreshold() {
-    console.log(tf.version);
-    console.log(tf.getBackend()); 
+function applyThreshold() { 
     const threshold = parseInt(thresholdSlider.value) / 100;
     thresholdValue.textContent = threshold.toFixed(2);
 
@@ -56,7 +54,7 @@ async function applyDilation() {
 
     tf.tidy(() => {
         // Prepare input tensor shape [batch, height, width, channels]
-        const input = currentImageTensor;
+        const input = currentImageTensor.expandDims(0).expandDims(-1);
 
         // Create dilation kernel (ones for dilation)
         const kernel = tf.ones([kernelSize, kernelSize, 1, 1]);
@@ -74,7 +72,7 @@ async function applyErosion() {
 
     tf.tidy(() => {
         // Prepare input tensor shape [batch, height, width, channels]
-        const input = currentImageTensor;
+        const input = currentImageTensor.expandDims(0).expandDims(-1);
 
         // Create erosion kernel (ones for erosion)
         const kernel = tf.ones([kernelSize, kernelSize, 1, 1]);
