@@ -23,7 +23,7 @@ async function loadImage() {
 
     const imageData = ctx.getImageData(0, 0, img.width, img.height);
     originalImageTensor = tf.tidy(() => {
-        return tf.browser.fromPixels(imageData, 1)
+        return tf.browser.fromPixels(imageData, 3)
             .toFloat()
             .div(tf.scalar(255));
     });
