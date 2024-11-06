@@ -7,8 +7,6 @@ const kernelSizeSlider = document.getElementById('kernelSize');
 const thresholdValue = document.getElementById('thresholdValue');
 const kernelSizeValue = document.getElementById('kernelSizeValue');
 
-console.log(tf.version);
-console.log(tf.getBackend()); 
 
 async function loadImage() {
     const img = new Image();
@@ -35,6 +33,8 @@ async function loadImage() {
 }
 
 function applyThreshold() {
+    console.log(tf.version);
+    console.log(tf.getBackend()); 
     const threshold = parseInt(thresholdSlider.value) / 100;
     thresholdValue.textContent = threshold.toFixed(2);
 
