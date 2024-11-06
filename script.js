@@ -8,7 +8,7 @@ const thresholdValue = document.getElementById('thresholdValue');
 const kernelSizeValue = document.getElementById('kernelSizeValue');
 
 console.log(tf.version);
-console.log(tf.getBackend());
+console.log(tf.getBackend()); 
 
 async function loadImage() {
     const img = new Image();
