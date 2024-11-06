@@ -41,8 +41,8 @@ function applyThreshold() {
 
     tf.tidy(() => {
         const thresholded = currentImageTensor.greater(threshold).toFloat();
-        currentImageTensor = thresholded;
         displayTensor(thresholded);
+        currentImageTensor = thresholded;
     });
 }
 
@@ -55,7 +55,6 @@ async function applyDilation() {
     kernelSizeValue.textContent = kernelSize;
 
     tf.tidy(() => {
-        applyThreshold();
         // Prepare input tensor shape [batch, height, width, channels]
         const input = currentImageTensor.expandDims(0);
 
@@ -74,7 +73,6 @@ async function applyErosion() {
     kernelSizeValue.textContent = kernelSize;
 
     tf.tidy(() => {
-        applyThreshold();
         // Prepare input tensor shape [batch, height, width, channels]
         const input = currentImageTensor.expandDims(0);
 
