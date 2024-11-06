@@ -48,12 +48,12 @@ function createKernel(size) {
 function applyDilation() {
     const kernelSize = parseInt(kernelSizeSlider.value);
     kernelSizeValue.textContent = kernelSize;
-    
+
     tf.tidy(() => {
         const kernel = createKernel(kernelSize);
-        const input = currentImageTensor.expandDims(0).expandDims(-1); // Expand to rank 4
+        const input = currentImageTensor.expandDims(-1);
         const dilated = tf.conv2d(input, kernel, 1, 'same');
-        currentImageTensor = dilated.squeeze([0, -1]); // Squeeze back to rank 2
+        currentImageTensor = dilated.squeeze([0, -1]);
         displayTensor(currentImageTensor);
     });
 }
@@ -61,12 +61,17 @@ function applyDilation() {
 function applyErosion() {
     const kernelSize = parseInt(kernelSizeSlider.value);
     kernelSizeValue.textContent = kernelSize;
-    
+
     tf.tidy(() => {
         const kernel = createKernel(kernelSize);
-        const input = currentImageTensor.expandDims(0).expandDims(-1); // Expand to rank 4
-        const eroded = tf.conv2d(input, kernel.mul(-1).add(1), 1, 'same');
-        currentImageTensor = eroded.squeeze([0, -1]); // Squeeze back to rank 2
+        const input = currentImageTensor.expandDims(-1);
+        const eroded = tf.conv2d(
+            input,
+            kernel.mul(-1).add(1),
+            1,
+            'same'
+        );
+        currentImageTensor = eroded.squeeze([0, -1]);
         displayTensor(currentImageTensor);
     });
 }
