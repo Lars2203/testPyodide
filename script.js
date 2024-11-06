@@ -56,15 +56,11 @@ async function applyDilation() {
         // Prepare input tensor shape [batch, height, width, channels]
         const input = currentImageTensor.expandDims(0).expandDims(-1);
 
-        // Create dilation layer
-        const dilationLayer = tf.keras.layers.Dilation2D({
-            dilationRate: [1, 1],
-            padding: 'same',
-            kernelSize: [kernelSize, kernelSize]
-        });
+        // Create dilation kernel (ones for dilation)
+        const kernel = tf.ones([kernelSize, kernelSize, 1, 1]);
 
-        // Apply dilation
-        const dilated = dilationLayer.apply(input);
+        // Apply 2D convolution (dilation effect)
+        const dilated = tf.conv2d(input, kernel, [1, 1], 'same');
         currentImageTensor = dilated.squeeze([0, -1]);
         displayTensor(currentImageTensor);
     });
@@ -78,15 +74,11 @@ async function applyErosion() {
         // Prepare input tensor shape [batch, height, width, channels]
         const input = currentImageTensor.expandDims(0).expandDims(-1);
 
-        // Create erosion layer
-        const erosionLayer = tf.keras.layers.Erosion2D({
-            dilationRate: [1, 1],
-            padding: 'same',
-            kernelSize: [kernelSize, kernelSize]
-        });
+        // Create erosion kernel (ones for erosion)
+        const kernel = tf.ones([kernelSize, kernelSize, 1, 1]);
 
-        // Apply erosion
-        const eroded = erosionLayer.apply(input);
+        // Apply 2D convolution (erosion effect)
+        const eroded = tf.conv2d(input, kernel, [1, 1], 'same');
         currentImageTensor = eroded.squeeze([0, -1]);
         displayTensor(currentImageTensor);
     });
