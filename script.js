@@ -6,19 +6,26 @@ tf.setBackend('wasm').then(() => {
 // Load image and set up processing parameters
 async function loadImage() {
     const img = new Image();
-    img.src = 'gray.png'; // Make sure this is correctly set to your image path
+    img.src = 'gray.png';
     await new Promise(resolve => img.onload = resolve);
 
-    // Initialize TensorFlow tensor with image data
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     canvas.width = img.width;
     canvas.height = img.height;
     ctx.drawImage(img, 0, 0);
-    let imageData = ctx.getImageData(0, 0, img.width, img.height);
-    let tensor = tf.tensor(Array.from(imageData.data), [img.height, img.width], 'int32');
 
-    return tensor;
+    // Get image data and create a tensor using only one channel
+    const imageData = ctx.getImageData(0, 0, img.width, img.height);
+    const data = new Uint8Array(imageData.width * imageData.height);
+
+    // Extract only the grayscale data (usually the red channel)
+    for (let i = 0; i < data.length; i++) {
+        data[i] = imageData.data[i * 4]; // Use the red channel
+    }
+
+    // Create a tensor from the grayscale data
+    return tf.tensor(data, [img.height, img.width], 'int32');
 }
 
 // Functions for thresholding, dilation, and erosion
