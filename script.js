@@ -29,7 +29,6 @@ async function loadImage() {
             .div(tf.scalar(255));
     });
     
-    originalImageTensor = tf.image.rgbToGrayscale(originalImageTensor);
     currentImageTensor = originalImageTensor.clone();
 
     applyThreshold();
