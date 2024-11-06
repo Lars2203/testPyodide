@@ -56,7 +56,7 @@ async function applyDilation() {
 
     tf.tidy(() => {
         // Prepare input tensor shape [batch, height, width, channels]
-        const input = currentImageTensor.expandDims(0).expandDims(-1);
+        const input = currentImageTensor;
 
         // Create dilation kernel (ones for dilation)
         const kernel = tf.ones([kernelSize, kernelSize, 1, 1]);
@@ -74,7 +74,7 @@ async function applyErosion() {
 
     tf.tidy(() => {
         // Prepare input tensor shape [batch, height, width, channels]
-        const input = currentImageTensor.expandDims(0).expandDims(-1);
+        const input = currentImageTensor;
 
         // Create erosion kernel (ones for erosion)
         const kernel = tf.ones([kernelSize, kernelSize, 1, 1]);
