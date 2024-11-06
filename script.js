@@ -9,6 +9,7 @@ const kernelSizeValue = document.getElementById('kernelSizeValue');
 
 async function loadImage() {
     tf.setBackend('wasm');
+    await tf.ready();
     const img = new Image();
     img.src = 'gray.png';
     await img.decode();
