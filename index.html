@@ -11,6 +11,7 @@
     <py-env>
         - matplotlib
         - scikit-image
+        - imageio
     </py-env>
 </head>
 <body>
@@ -36,9 +37,10 @@
 
     <py-script>
         from js import document
-        from skimage import io, color, morphology
+        from skimage import color, morphology
         import matplotlib.pyplot as plt
         import numpy as np
+        import imageio
         import io, base64
 
         def applyTransformation():
@@ -48,7 +50,7 @@
             operation = document.getElementById("operation").value
 
             # Load image and process
-            img = io.imread('gray.png')  # Ensure 'gray.png' is present in the same folder
+            img = imageio.imread('gray.png')  # Ensure 'gray.png' is present in the same folder
             gray_img = color.rgb2gray(img)
 
             # Thresholding
