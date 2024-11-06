@@ -73,6 +73,7 @@ async function applyErosion() {
     tf.tidy(() => {
         // Prepare input tensor shape [batch, height, width, channels]
         const input = currentImageTensor.expandDims(0).expandDims(-1);
+        console.log(input.shape);
 
         // Create erosion kernel (ones for erosion)
         const kernel = tf.ones([kernelSize, kernelSize, 1, 1]);
