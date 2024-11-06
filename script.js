@@ -42,35 +42,48 @@ function applyThreshold() {
 }
 
 function createKernel(size) {
-    return tf.tidy(() => tf.ones([size, size, 1, 1]).toFloat());
+    return tf.tidy(() => tf.ones([size, size]));
 }
 
-function applyDilation() {
+async function applyDilation() {
     const kernelSize = parseInt(kernelSizeSlider.value);
     kernelSizeValue.textContent = kernelSize;
 
     tf.tidy(() => {
-        const kernel = createKernel(kernelSize);
-        const input = currentImageTensor.expandDims(-1);
-        const dilated = tf.conv2d(input, kernel, 1, 'same');
+        // Prepare input tensor shape [batch, height, width, channels]
+        const input = currentImageTensor.expandDims(0).expandDims(-1);
+
+        // Create dilation layer
+        const dilationLayer = tf.keras.layers.Dilation2D({
+            dilationRate: [1, 1],
+            padding: 'same',
+            kernelSize: [kernelSize, kernelSize]
+        });
+
+        // Apply dilation
+        const dilated = dilationLayer.apply(input);
         currentImageTensor = dilated.squeeze([0, -1]);
         displayTensor(currentImageTensor);
     });
 }
 
-function applyErosion() {
+async function applyErosion() {
     const kernelSize = parseInt(kernelSizeSlider.value);
     kernelSizeValue.textContent = kernelSize;
 
     tf.tidy(() => {
-        const kernel = createKernel(kernelSize);
-        const input = currentImageTensor.expandDims(-1);
-        const eroded = tf.conv2d(
-            input,
-            kernel.mul(-1).add(1),
-            1,
-            'same'
-        );
+        // Prepare input tensor shape [batch, height, width, channels]
+        const input = currentImageTensor.expandDims(0).expandDims(-1);
+
+        // Create erosion layer
+        const erosionLayer = tf.keras.layers.Erosion2D({
+            dilationRate: [1, 1],
+            padding: 'same',
+            kernelSize: [kernelSize, kernelSize]
+        });
+
+        // Apply erosion
+        const eroded = erosionLayer.apply(input);
         currentImageTensor = eroded.squeeze([0, -1]);
         displayTensor(currentImageTensor);
     });
