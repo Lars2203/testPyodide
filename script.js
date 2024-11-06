@@ -57,7 +57,7 @@ async function applyDilation() {
         const input = currentImageTensor.expandDims(0);
 
         // Create dilation kernel (ones for dilation)
-        const kernel = tf.ones([kernelSize, kernelSize, 1, 1]);
+        const kernel = tf.zeros([kernelSize, kernelSize, 1, 1]);
 
         // Apply 2D convolution (dilation effect)
         const dilated = tf.conv2d(input, kernel, [1, 1], 'same');
