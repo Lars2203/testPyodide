@@ -77,7 +77,7 @@ async function applyErosion() {
         // Create erosion kernel (ones for erosion)
         const kernel = tf.ones([kernelSize, kernelSize, 1, 1]);
 
-        console.log(kernel);
+        console.log(input);
 
         // Apply 2D convolution (erosion effect)
         const eroded = tf.conv2d(input, kernel, [1, 1], 'same');
