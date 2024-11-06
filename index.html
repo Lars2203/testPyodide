@@ -1,87 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
-    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
-    <py-env>
-        - scikit-image
-        - matplotlib
-        - imageio
-    </py-env>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Processing with Sliders</title>
 </head>
 <body>
-    <h1>Image Thresholding and Morphological Operations</h1>
-    <div>
-        <label for="thresholdSlider">Threshold: </label>
-        <input type="range" id="thresholdSlider" min="0" max="255" value="128" />
-        <span id="thresholdValue">128</span>
-    </div>
-    <div>
-        <label for="kernelSlider">Kernel Size: </label>
-        <input type="range" id="kernelSlider" min="1" max="10" value="3" />
-        <span id="kernelSize">3</span>
-    </div>
-    <div>
-        <label for="operation">Operation: </label>
-        <select id="operation">
-            <option value="dilation">Dilation</option>
-            <option value="erosion">Erosion</option>
-        </select>
-    </div>
-    <button onclick="applyTransform()">Apply</button>
+    <h1>Interactive Thresholding and Morphological Operations</h1>
+    <input type="range" id="thresholdSlider" min="0" max="255" value="128">
+    <label for="thresholdSlider">Threshold</label>
 
-    <div id="imageDisplay">
-        <img id="processedImage" />
-    </div>
+    <input type="range" id="dilationSlider" min="1" max="10" value="1">
+    <label for="dilationSlider">Dilation Size</label>
 
-    <py-script>
-from js import document
-from skimage import io, color, morphology
-import matplotlib.pyplot as plt
-import io as io_bytes, base64
+    <input type="range" id="erosionSlider" min="1" max="10" value="1">
+    <label for="erosionSlider">Erosion Size</label>
 
-# Load image once
-img = io.imread("https://lars2203.github.io/testPyodide/gray.png")
-gray_img = color.rgb2gray(img)
+    <canvas id="canvas"></canvas>
 
-def threshold(threshold_value):
-    return gray_img > (threshold_value / 255)
-
-def morphological_operation(operation, size):
-    if operation == "dilation":
-        return morphology.dilation(gray_img, morphology.square(size))
-    elif operation == "erosion":
-        return morphology.erosion(gray_img, morphology.square(size))
-
-def applyTransform(*args):
-    threshold_value = int(document.getElementById("thresholdSlider").value)
-    kernel_size = int(document.getElementById("kernelSlider").value)
-    operation = document.getElementById("operation").value
-
-    # Apply threshold and morphological operation
-    binary_img = threshold(threshold_value)
-    processed_img = morphological_operation(operation, kernel_size)
-
-    # Display the result using matplotlib
-    fig, ax = plt.subplots()
-    ax.imshow(processed_img, cmap="gray")
-    ax.axis("off")
-
-    # Convert plot to a PNG image and display it
-    buf = io_bytes.BytesIO()
-    plt.savefig(buf, format="png")
-    buf.seek(0)
-    img_str = "data:image/png;base64," + base64.b64encode(buf.read()).decode("utf-8")
-    document.getElementById("processedImage").setAttribute("src", img_str)
-
-# Update display of sliders
-def updateDisplay(*args):
-    document.getElementById("thresholdValue").innerText = document.getElementById("thresholdSlider").value
-    document.getElementById("kernelSize").innerText = document.getElementById("kernelSlider").value
-
-document.getElementById("thresholdSlider").addEventListener("input", updateDisplay)
-document.getElementById("kernelSlider").addEventListener("input", updateDisplay)
-
-</py-script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="script.js"></script>
 </body>
 </html>
