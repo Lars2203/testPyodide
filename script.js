@@ -41,6 +41,7 @@ function applyThreshold() {
 
     tf.tidy(() => {
         const thresholded = currentImageTensor.greater(threshold).toFloat();
+        currentImageTensor = thresholded;
         displayTensor(thresholded);
     });
 }
