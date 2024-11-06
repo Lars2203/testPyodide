@@ -62,7 +62,8 @@ async function applyDilation() {
         // Apply 2D convolution (dilation effect)
         const dilated = tf.conv2d(input, kernel, [1, 1], 'same');
         currentImageTensor = dilated.squeeze([0, -1]);
-        displayTensor(currentImageTensor);
+        const tensor = currentImageTensor;
+        displayTensor(tensor);
     });
 }
 
@@ -82,7 +83,8 @@ async function applyErosion() {
         // Apply 2D convolution (erosion effect)
         const eroded = tf.conv2d(input, kernel, [1, 1], 'same');
         currentImageTensor = eroded.squeeze([0, -1]);
-        displayTensor(currentImageTensor);
+        const tensor = currentImageTensor;
+        displayTensor(tensor);
     });
 }
 
