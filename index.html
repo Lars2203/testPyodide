@@ -1,26 +1,157 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Processing with Sliders</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-backend-wasm@latest/dist/tf-backend-wasm.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <title>Image Processing</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/4.10.0/tf.min.js"></script>
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .slider-container {
+            margin: 10px 0;
+        }
+        canvas {
+            max-width: 100%;
+            margin: 10px 0;
+        }
+    </style>
 </head>
 <body>
-    <h1>Interactive Thresholding and Morphological Operations</h1>
-    <input type="range" id="thresholdSlider" min="0" max="255" value="128">
-    <label for="thresholdSlider">Threshold</label>
+    <div class="container">
+        <h1>Image Processing</h1>
+        
+        <div class="controls">
+            <div class="slider-container">
+                <label for="threshold">Threshold Value (0-255): </label>
+                <input type="range" id="threshold" min="0" max="255" value="128">
+                <span id="thresholdValue">128</span>
+            </div>
+            
+            <div class="slider-container">
+                <label for="kernelSize">Kernel Size (3-11): </label>
+                <input type="range" id="kernelSize" min="3" max="11" step="2" value="3">
+                <span id="kernelSizeValue">3</span>
+            </div>
+            
+            <div>
+                <button onclick="applyDilation()">Apply Dilation</button>
+                <button onclick="applyErosion()">Apply Erosion</button>
+                <button onclick="resetImage()">Reset Image</button>
+            </div>
+        </div>
 
-    <input type="range" id="dilationSlider" min="1" max="10" value="1">
-    <label for="dilationSlider">Dilation Size</label>
+        <canvas id="inputCanvas"></canvas>
+        <canvas id="outputCanvas"></canvas>
+    </div>
 
-    <input type="range" id="erosionSlider" min="1" max="10" value="1">
-    <label for="erosionSlider">Erosion Size</label>
+    <script>
+        let originalImageTensor;
+        let currentImageTensor;
+        const inputCanvas = document.getElementById('inputCanvas');
+        const outputCanvas = document.getElementById('outputCanvas');
+        const thresholdSlider = document.getElementById('threshold');
+        const kernelSizeSlider = document.getElementById('kernelSize');
+        const thresholdValue = document.getElementById('thresholdValue');
+        const kernelSizeValue = document.getElementById('kernelSizeValue');
 
-    <canvas id="canvas"></canvas>
+        // Load and process the image
+        async function loadImage() {
+            const img = new Image();
+            img.src = 'gray.png';
+            await img.decode();
+            
+            inputCanvas.width = img.width;
+            inputCanvas.height = img.height;
+            outputCanvas.width = img.width;
+            outputCanvas.height = img.height;
 
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
-    <script src="script.js"></script>
+            const ctx = inputCanvas.getContext('2d');
+            ctx.drawImage(img, 0, 0);
+            
+            const imageData = ctx.getImageData(0, 0, img.width, img.height);
+            originalImageTensor = tf.browser.fromPixels(imageData, 1);
+            currentImageTensor = originalImageTensor.clone();
+            
+            applyThreshold();
+        }
+
+        // Apply threshold to the image
+        function applyThreshold() {
+            const threshold = parseInt(thresholdSlider.value);
+            thresholdValue.textContent = threshold;
+            
+            tf.tidy(() => {
+                const thresholded = currentImageTensor.greater(threshold).toFloat().mul(255);
+                displayTensor(thresholded);
+            });
+        }
+
+        // Create kernel for morphological operations
+        function createKernel(size) {
+            return tf.ones([size, size]);
+        }
+
+        // Apply dilation
+        function applyDilation() {
+            const kernelSize = parseInt(kernelSizeSlider.value);
+            kernelSizeValue.textContent = kernelSize;
+            
+            tf.tidy(() => {
+                const kernel = createKernel(kernelSize);
+                const dilated = tf.conv2d(
+                    currentImageTensor.expandDims(0).expandDims(-1),
+                    kernel.expandDims(-1).expandDims(-1),
+                    [1, 1],
+                    'same'
+                );
+                currentImageTensor = dilated.squeeze();
+                displayTensor(currentImageTensor);
+            });
+        }
+
+        // Apply erosion
+        function applyErosion() {
+            const kernelSize = parseInt(kernelSizeSlider.value);
+            kernelSizeValue.textContent = kernelSize;
+            
+            tf.tidy(() => {
+                const kernel = createKernel(kernelSize);
+                const eroded = tf.conv2d(
+                    currentImageTensor.expandDims(0).expandDims(-1),
+                    kernel.expandDims(-1).expandDims(-1).mul(-1),
+                    [1, 1],
+                    'same'
+                );
+                currentImageTensor = eroded.squeeze();
+                displayTensor(currentImageTensor);
+            });
+        }
+
+        // Reset the image to original
+        function resetImage() {
+            currentImageTensor = originalImageTensor.clone();
+            applyThreshold();
+        }
+
+        // Display tensor on canvas
+        function displayTensor(tensor) {
+            const outputCtx = outputCanvas.getContext('2d');
+            tf.browser.toPixels(tensor, outputCanvas);
+        }
+
+        // Event listeners
+        thresholdSlider.addEventListener('input', applyThreshold);
+        kernelSizeSlider.addEventListener('input', () => {
+            kernelSizeValue.textContent = kernelSizeSlider.value;
+        });
+
+        // Initialize
+        loadImage().catch(console.error);
+    </script>
 </body>
 </html>
