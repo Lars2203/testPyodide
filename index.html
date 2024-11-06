@@ -1,100 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Thresholding and Morphological Operations</title>
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.21.3/full/pyodide.js"></script>
+    <link rel="stylesheet" href="https://pyscript.net/alpha/pyscript.css" />
+    <script defer src="https://pyscript.net/alpha/pyscript.js"></script>
+    <style>
+        .slider {
+            margin: 20px 0;
+        }
+    </style>
+    <py-env>
+        - matplotlib
+        - scikit-image
+    </py-env>
 </head>
 <body>
     <h1>Image Thresholding and Morphological Operations</h1>
+    
+    <!-- Threshold Slider -->
+    <label for="threshold">Threshold Value:</label>
+    <input type="range" id="threshold" min="0" max="1" step="0.01" value="0.5" class="slider" oninput="applyTransformation()" />
 
-    <label for="threshold-slider">Threshold:</label>
-    <input type="range" id="threshold-slider" min="0" max="1" step="0.01" value="0.5">
+    <!-- Kernel Size Slider -->
+    <label for="kernel">Kernel Size:</label>
+    <input type="range" id="kernel" min="1" max="15" step="1" value="3" class="slider" oninput="applyTransformation()" />
 
-    <label for="kernel-slider">Kernel Size:</label>
-    <input type="range" id="kernel-slider" min="1" max="10" step="1" value="3">
-
-    <label for="operation-switch">Operation:</label>
-    <select id="operation-switch">
+    <!-- Morphological Operation Switch -->
+    <label for="operation">Operation:</label>
+    <select id="operation" onchange="applyTransformation()">
         <option value="dilation">Dilation</option>
         <option value="erosion">Erosion</option>
     </select>
 
-    <button onclick="applyTransformations()">Apply Transformations</button>
+    <!-- Image Output -->
+    <div id="image-output"></div>
 
-    <h2>Output Image:</h2>
-    <canvas id="output-canvas"></canvas>
+    <py-script>
+        from js import document
+        from skimage import io, color, morphology
+        import matplotlib.pyplot as plt
+        import numpy as np
+        import io, base64
 
-    <script>
-        async function loadPyodideAndPackages() {
-            // Load Pyodide and required Python packages
-            window.pyodide = await loadPyodide();
-            await pyodide.loadPackage(['numpy', 'scikit-image', 'matplotlib']);
-        }
-        
-        async function applyTransformations() {
-            const thresholdValue = parseFloat(document.getElementById("threshold-slider").value);
-            const kernelSize = parseInt(document.getElementById("kernel-slider").value);
-            const operation = document.getElementById("operation-switch").value;
+        def applyTransformation():
+            # Read input values
+            threshold_value = float(document.getElementById("threshold").value)
+            kernel_size = int(document.getElementById("kernel").value)
+            operation = document.getElementById("operation").value
 
-            // Define Python code with Pyodide
-            const code = `
-from skimage.io import imread
-from skimage.color import rgb2gray
-from skimage import morphology
-import numpy as np
+            # Load image and process
+            img = io.imread('gray.png')  # Ensure 'gray.png' is present in the same folder
+            gray_img = color.rgb2gray(img)
 
-from pyodide.http import pyfetch
-from js import document
-import asyncio
-from io import BytesIO
-import matplotlib.pyplot as plt
-import imageio.v3 as iio
-import io, base64
+            # Thresholding
+            binary_img = gray_img > threshold_value
 
-# Load the image
-response = await pyfetch(url="https://lars2203.github.io/testPyodide/gray.png", method="GET")
-img = iio.imread(BytesIO(await response.bytes()), index=None)
-gray_img = rgb2gray(img)
+            # Apply morphological operation
+            if operation == "dilation":
+                result_img = morphology.dilation(binary_img, morphology.square(kernel_size))
+            else:
+                result_img = morphology.erosion(binary_img, morphology.square(kernel_size))
 
-def threshold(threshold_value):
-    binary_img = gray_img > threshold_value
-    return binary_img
+            # Display result
+            buf = io.BytesIO()
+            plt.imshow(result_img, cmap='gray')
+            plt.axis('off')
+            plt.savefig(buf, format='png')
+            buf.seek(0)
+            img_str = "data:image/png;base64," + base64.b64encode(buf.read()).decode("utf-8")
+            document.getElementById("output-img").src = img_str
 
-def morphological_operation(operation, size):
-    if operation == "dilation":
-        result = morphology.dilation(gray_img, morphology.square(size))
-    elif operation == "erosion":
-        result = morphology.erosion(gray_img, morphology.square(size))
-    return result
+        # Initial display setup
+        applyTransformation()
+    </py-script>
 
-# Apply transformations
-binary_img = threshold(${thresholdValue})
-morphed_img = morphological_operation('${operation}', ${kernelSize})
-            `;
-
-            // Run the Python code
-            await pyodide.runPythonAsync(code);
-
-            // Get the result image and display it
-            const morphedImg = pyodide.globals.get('morphed_img').toJs();
-            drawOnCanvas(morphedImg);
-        }
-
-        function drawOnCanvas(imageArray) {
-            const canvas = document.getElementById("output-canvas");
-            const ctx = canvas.getContext("2d");
-            canvas.width = imageArray.shape[1];
-            canvas.height = imageArray.shape[0];
-            
-            // Flatten and normalize array for rendering
-            const imageData = new Uint8ClampedArray(imageArray.flat().map(v => v * 255));
-            const imgData = new ImageData(imageData, canvas.width, canvas.height);
-            ctx.putImageData(imgData, 0, 0);
-        }
-
-        loadPyodideAndPackages();
-    </script>
+    <div id="image-container">
+        <img id="output-img" alt="Processed Image"/>
+    </div>
 </body>
 </html>
