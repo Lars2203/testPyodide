@@ -60,7 +60,7 @@ async function applyDilation() {
         const kernel = tf.ones([kernelSize, kernelSize, 1, 1]);
 
         // Apply 2D convolution (dilation effect)
-        const dilated = tf.conv3d(input, kernel, [1, 1], 'same');
+        const dilated = tf.conv2d(input, kernel, [1, 1], 'same');
         currentImageTensor = dilated.squeeze([0, -1]);
         displayTensor(currentImageTensor);
     });
@@ -72,16 +72,15 @@ async function applyErosion() {
 
     tf.tidy(() => {
         // Prepare input tensor shape [batch, height, width, channels]
-        console.log(currentImageTensor.shape);
         const input = currentImageTensor.expandDims(0).expandDims(-1);
-        console.log(input.shape);
-        console.log(input);
 
         // Create erosion kernel (ones for erosion)
         const kernel = tf.ones([kernelSize, kernelSize, 1, 1]);
 
+        console.log(kernel);
+
         // Apply 2D convolution (erosion effect)
-        const eroded = tf.conv3d(input, kernel, [1, 1], 'same');
+        const eroded = tf.conv2d(input, kernel, [1, 1], 'same');
         currentImageTensor = eroded.squeeze([0, -1]);
         displayTensor(currentImageTensor);
     });
