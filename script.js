@@ -22,35 +22,13 @@ async function loadImage() {
     ctx.drawImage(img, 0, 0);
 
     const imageData = ctx.getImageData(0, 0, img.width, img.height);
-
-    // Convert image to grayscale by averaging the RGB values
-    const grayscaleData = new Uint8ClampedArray(imageData.width * imageData.height);
-
-    for (let i = 0; i < imageData.data.length; i += 4) {
-        // Get the RGB values
-        const r = imageData.data[i];
-        const g = imageData.data[i + 1];
-        const b = imageData.data[i + 2];
-
-        // Convert to grayscale using the average of RGB
-        const gray = (r + g + b) / 3;
-
-        // Store the grayscale value in the new array (using only 1 channel, grayscale)
-        grayscaleData[i / 4] = gray;
-    }
-
-    // Create a new ImageData object with the grayscale values
-    const grayscaleImageData = new ImageData(new Uint8ClampedArray(grayscaleData.buffer), img.width, img.height);
-
-    // Update the input canvas with the grayscale image
-    ctx.putImageData(grayscaleImageData, 0, 0);
-
-    // Convert the grayscale image to tensor
     originalImageTensor = tf.tidy(() => {
-        return tf.browser.fromPixels(grayscaleImageData, 1) // 1 indicates grayscale
+        return tf.browser.fromPixels(imageData, 1)
             .toFloat()
             .div(tf.scalar(255));
     });
+    
+    originalImageTensor = tf.image.rgbToGrayscale(originalImageTensor);
     currentImageTensor = originalImageTensor.clone();
 
     applyThreshold();
